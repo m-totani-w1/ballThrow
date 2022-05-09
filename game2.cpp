@@ -8,18 +8,21 @@ using namespace Leap;
 using namespace std;
 
 /* フィールド生成用 */
-#define W 10			/* フィールドの幅 */
-#define	D 10			/* フィールドの長さ */
+#define W 15			/* フィールドの幅 */
+#define	D 15			/* フィールドの長さ */
 #define G (-9.8)		/* 重力加速度 */
-#define V 25.0			/* 球の初速度 */
+#define V 15.0			/* 球の初速度 */
 #define QX 0.0			/* 球の初期位置 x座標 */
-#define QY 1.5			/* 球の初期位置 y座標 */
+#define QY 0.0			/* 球の初期位置 y座標 */
 #define QZ (10.0)		/* 球の初期位置 z座標 */
 #define KEY_ESCAPE 27		/*  */
 #define DEFAULT_WIDTH 800	/* ウィンドウの幅 */
 #define DEFAULT_HEIGHT 600	/* ウィンドウの高さ */
-#define TSTEP 0.01		/* フレームごとの時間 */
+#define TSTEP 0.004	/* フレームごとの時間 */
 
+double t = 0; /* 時間 */
+double theta = PI/4;	/*　球の発射角Θ　*/
+double omega = -PI / 8;/*　球の発射角Ω　*/
 
 int window;
 int screen_width = DEFAULT_WIDTH;
@@ -62,14 +65,10 @@ void SampleListener::onExit(const Controller& controller) {
 }
 
 void SampleListener::onFrame(const Controller& controller) {
-	//ここに処理を書く
 	Frame frame = controller.frame();// 最新のFrameを取得する
 	HandList handList = frame.hands();// 全ての手の情報を取得する
 	FingerList allFingerList = frame.fingers();// 全ての指の情報を取得する
 	GestureList gesturesInFrame = frame.gestures();// 全てのジェスチャーの情報を取得する
-
-
-
 
 	if (gesturesInFrame.count() != 0) {
 
@@ -100,6 +99,8 @@ void SampleListener::onFrame(const Controller& controller) {
 			}
 		}
 
+		
+
 		//ジェスチャーの処理
 		GestureList gestures = frame.gestures();
 		for (i = 0; i < gestures.count(); i++) {
@@ -116,12 +117,10 @@ void SampleListener::onFrame(const Controller& controller) {
 				break;
 			case Gesture::TYPE_KEY_TAP:
 				printf("KEY_TAP\n");
-				/*アニメーション開始*/
-				glutIdleFunc(idle);
-				flag = 1;
-				break;
 			case Gesture::TYPE_SCREEN_TAP:
 				printf("SCREEN_TAP\n");
+				/*発射角の計算*/
+
 				/*アニメーション開始*/
 				glutIdleFunc(idle);
 				flag = 1;
@@ -186,18 +185,43 @@ void display(void){
 	
 	/* 球の位置 */
 	static double px = QX, py = QY, pz = QZ;
+
+	/*球の初速度*/
+	static double initVx = 0;
+	static double initVy = 0;
+	static double initVz = 0;
+
 	
 	// pyv y軸の速度 pa 加速度 pe 跳ね上がり係数
 	
 	/* 物理演算 */
 	if(flag) {
-		pz = 10;
+		pz = QZ;
+		py = QY;
+		t = 0;	/*初期時刻の設定*/
+		initVx = -V * cos(theta) * sin(omega); /*x方向の初速度*/
+		initVy = V * sin(theta);/*y方向の初速度*/
+		initVz = -V * cos(theta) * cos(omega);/*z方向の初速度*/
+
 		flag = 0;
 	}
-	px += 0.000;
-	py += 0.000;
-	pz -= 0.01;
-	printf("px:%f,py:%f,pz:%f\n", px, py, pz);
+	
+	double vx = initVx;	/*x方向の速度*/
+	double vy = initVy;	/*y方向の速度*/
+	double vz = initVz;	/*z方向の速度*/
+	
+	
+	vy = G * t + initVy;
+	
+	
+	px = vx * t + QX;
+	py = vy * t + QY;
+	pz = vz * t + QZ;
+	t += TSTEP;
+	
+	printf("px:%f,py:%f,pz:%f,time:%f,vy:%f,initVy:%f\n", px, py, pz,t,vy,initVy);
+
+
 	
 	
 	/* 画面クリア */
@@ -210,7 +234,7 @@ void display(void){
 	glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
 	
 	/* 視点の移動(物体の方を奥に移す) */
-	glTranslated(0.0, -QY, -D);
+	glTranslated(0.0, -1.5, -D);
 	
 	/* シーンの描画 */
 	myGround(0.0);
@@ -286,6 +310,8 @@ int main(int argc, char *argv[]){
  	SampleListener listener;
 	//SampleListener listener = new SampleListener();
   	Controller controller;
+
+
 	
 	controller.addListener(listener);
 	

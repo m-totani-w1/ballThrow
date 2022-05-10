@@ -21,8 +21,9 @@ using namespace std;
 #define TSTEP 0.004	/* フレームごとの時間 */
 
 double t = 0; /* 時間 */
-double theta = PI/4;	/*　球の発射角Θ　*/
-double omega = -PI / 8;/*　球の発射角Ω　*/
+Vector direction = {0,0,-1};	/*ボールの発射方向*/
+double theta = direction*{0,0,1};	/*　球の発射角Θ　*/
+double omega = ;/*　球の発射角Ω　*/
 
 int window;
 int screen_width = DEFAULT_WIDTH;
@@ -70,7 +71,7 @@ void SampleListener::onFrame(const Controller& controller) {
 	FingerList allFingerList = frame.fingers();// 全ての指の情報を取得する
 	GestureList gesturesInFrame = frame.gestures();// 全てのジェスチャーの情報を取得する
 
-	if (gesturesInFrame.count() != 0) {
+	if (handList.count() != 0) {
 
 		//それぞれの個数を表示する
 		printf("\n\n\nhands:%d, fingers:%2d, gestures:%d\n",
@@ -96,7 +97,13 @@ void SampleListener::onFrame(const Controller& controller) {
 				//個別の指の情報を出力する
 				printf("    finger[%d] (%6.1f,%6.1f,%6.1f)\n",
 					j, currentPosition.x, currentPosition.y, currentPosition.z);
+				if()
 			}
+			/*発射角の計算*/
+			
+			/*アニメーション開始*/
+			glutIdleFunc(idle);
+			flag = 1;
 		}
 
 		
@@ -117,13 +124,9 @@ void SampleListener::onFrame(const Controller& controller) {
 				break;
 			case Gesture::TYPE_KEY_TAP:
 				printf("KEY_TAP\n");
+				break;
 			case Gesture::TYPE_SCREEN_TAP:
 				printf("SCREEN_TAP\n");
-				/*発射角の計算*/
-
-				/*アニメーション開始*/
-				glutIdleFunc(idle);
-				flag = 1;
 				break;
 			default:
 				printf("unknown\n");
@@ -199,9 +202,12 @@ void display(void){
 		pz = QZ;
 		py = QY;
 		t = 0;	/*初期時刻の設定*/
-		initVx = -V * cos(theta) * sin(omega); /*x方向の初速度*/
-		initVy = V * sin(theta);/*y方向の初速度*/
-		initVz = -V * cos(theta) * cos(omega);/*z方向の初速度*/
+		//initVx = -V * cos(theta) * sin(omega); /*x方向の初速度*/
+		//initVy = V * sin(theta);/*y方向の初速度*/
+		//initVz = -V * cos(theta) * cos(omega);/*z方向の初速度*/
+		initVx = -V * direction.x;
+		initVy = V * direction.y;
+		initVz = -V * direction.z;
 
 		flag = 0;
 	}

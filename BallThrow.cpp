@@ -1,8 +1,11 @@
 /* Include */
 #include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
 #include <GL/glut.h>
 #include "Leap.h"
+#include <Windows.h>
+#include <timeapi.h>
 
 using namespace Leap;
 using namespace std;
@@ -13,7 +16,7 @@ using namespace std;
 #define G (-9.8)		/* 重力加速度 */
 #define V 15.0			/* 球の初速度 */
 #define QX 0.0			/* 球の初期位置 x座標 */
-#define QY 0.0			/* 球の初期位置 y座標 */
+#define QY 1.0			/* 球の初期位置 y座標 */
 #define QZ (10.0)		/* 球の初期位置 z座標 */
 #define KEY_ESCAPE 27		/*  */
 #define DEFAULT_WIDTH 800	/* ウィンドウの幅 */
@@ -22,8 +25,8 @@ using namespace std;
 
 double t = 0; /* 時間 */
 Vector direction = {0,0,-1};	/*ボールの発射方向*/
-double theta = direction*{0,0,1};	/*　球の発射角Θ　*/
-double omega = ;/*　球の発射角Ω　*/
+bool handCheck = false;	/*手がある時に発射*/
+DWORD start = timeGetTime();       // スタート時間
 
 int window;
 int screen_width = DEFAULT_WIDTH;
@@ -97,16 +100,14 @@ void SampleListener::onFrame(const Controller& controller) {
 				//個別の指の情報を出力する
 				printf("    finger[%d] (%6.1f,%6.1f,%6.1f)\n",
 					j, currentPosition.x, currentPosition.y, currentPosition.z);
-				if()
+				/*発射角の計算*/
+				if (j == 1) {
+					direction = finger.direction();
+				}
+				
 			}
-			/*発射角の計算*/
-			
-			/*アニメーション開始*/
-			glutIdleFunc(idle);
-			flag = 1;
+			printf("x:%f y:%f z:%f\n", direction[0], direction[1], direction[2]);
 		}
-
-		
 
 		//ジェスチャーの処理
 		GestureList gestures = frame.gestures();
@@ -133,6 +134,16 @@ void SampleListener::onFrame(const Controller& controller) {
 				break;
 			}
 		}
+		/*発射*/
+		if (handCheck == false) {
+			handCheck = true;
+			/*アニメーション開始*/
+			glutIdleFunc(idle);
+			flag = 1;
+		}
+	}
+	else {
+		handCheck = false;
 	}
 }
 
@@ -180,6 +191,7 @@ void myGround(double height){
 /* 画面表示 */
 void display(void){
 	
+	
 	/* 光源の位置 */
 	static GLfloat lightpos[] = { 3.0, 4.0, 5.0, 1.0 };
 	
@@ -197,18 +209,16 @@ void display(void){
 	
 	// pyv y軸の速度 pa 加速度 pe 跳ね上がり係数
 	
+	double t;
 	/* 物理演算 */
-	if(flag) {
+	if(flag || (handCheck && t > 1)) {
+		start = timeGetTime();       // スタート時間
 		pz = QZ;
 		py = QY;
-		t = 0;	/*初期時刻の設定*/
-		//initVx = -V * cos(theta) * sin(omega); /*x方向の初速度*/
-		//initVy = V * sin(theta);/*y方向の初速度*/
-		//initVz = -V * cos(theta) * cos(omega);/*z方向の初速度*/
-		initVx = -V * direction.x;
+		t = 0;
+		initVx = V * direction.x;
 		initVy = V * direction.y;
-		initVz = -V * direction.z;
-
+		initVz = V * direction.z;
 		flag = 0;
 	}
 	
@@ -216,16 +226,15 @@ void display(void){
 	double vy = initVy;	/*y方向の速度*/
 	double vz = initVz;	/*z方向の速度*/
 	
-	
+	t = (timeGetTime() - start) / 1000.0;
 	vy = G * t + initVy;
 	
 	
 	px = vx * t + QX;
 	py = vy * t + QY;
 	pz = vz * t + QZ;
-	t += TSTEP;
 	
-	printf("px:%f,py:%f,pz:%f,time:%f,vy:%f,initVy:%f\n", px, py, pz,t,vy,initVy);
+	printf("px:%f,py:%f,pz:%f,time:%f\n", px, py, pz,t);
 
 
 	
